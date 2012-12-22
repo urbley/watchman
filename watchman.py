@@ -56,7 +56,7 @@ def loadConfig():
 
 
 # Function to restart a process from a failed search
-def restartProcess( search ):
+def restartProcess( pattern ):
     pass
 
 
@@ -78,15 +78,14 @@ def runSearch( search, pattern ):
         if re.search( "^.+pgrep.+", item ):
             commOutputList.remove( item )
 
-        if commOutputList:
-            rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-            print( rightNow + " - %s is currently running.  Nothing to do!\n" % pattern, file=log )
+    if commOutputList:
+        rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
+        print( rightNow + " - %s is currently running.  Nothing to do!\n" % pattern, file=log )
+    else:
+        rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
+        print( rightNow + " - Oh dear! Restarting %s\n" % pattern, file=log )
 
-            else:
-            rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-            print( rightNow + " - Oh dear! Restarting %s\n" % pattern, file=log )
-
-            restartProcess( pattern )
+        restartProcess( pattern )
 
 
 # Run the searches
@@ -94,11 +93,10 @@ def runSearches():
     if searches:
         # Log readability separator
         rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-        print( "\n############### Search starting - %s ###############" % rightNow, file=log )
+        print( "\n------------------------ Search starting - %s ------------------------" % rightNow, file=log )
 
         for search, pattern in searches.iteritems():
             runSearch( search, pattern )
-
     else:
         rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
         print( rightNow + " - There were no searches in the config (" + pwd + "/watchman.conf).", file=log )
