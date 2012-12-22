@@ -6,6 +6,7 @@ import re
 import commands
 import datetime
 
+
 # Global variables
 searches = {} # dictionary to store all searches found in the conf
 log = open( "/var/log/watchman_log", "a" ) # Lets try and open a log in /var/log to write to
@@ -39,8 +40,10 @@ def loadConfig():
         # Skipping the rubbish
         if re.search( "^\[", line ):
             continue # Lets ignore section headers. the conf isn't complicated enough yet...
+
         if re.search( "^#", line ):
             continue # Lets ignore comments of course
+
         if line == '\n':
             continue # We don't care about blank lines do we?
 
@@ -51,7 +54,39 @@ def loadConfig():
             # We want the search name and the search string.
             searches[matches.group(1)] = matches.group(2)
 
-    return searches
+
+# Function to restart a process from a failed search
+def restartProcess( search ):
+    pass
+
+
+# I've broken out the individual searches into a reuseable function
+def runSearch( search, pattern ):
+    rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
+    print( "%s - Running %s.\n%s - Searching for \"%s\"." % ( rightNow, search, rightNow, pattern ), file=log )
+
+    commOutput = commands.getstatusoutput( "pgrep -fl \"" + pattern + "\"" )
+
+    # Bummer... The pgrep is in the list of search results causing false positives.  Need to RE them out.
+    # I've tried ps and considered querying /proc using glob but they all require as much work as the grep.
+    # Most Python resources recommend avoiding RE where possible (hog) but given the size of the project
+    # and since I like using RE I'm going to proceed with that.
+
+    commOutputList = commOutput[1].split( '\n' )
+
+    for item in commOutputList:
+        if re.search( "^.+pgrep.+", item ):
+            commOutputList.remove( item )
+
+        if commOutputList:
+            rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
+            print( rightNow + " - %s is currently running.  Nothing to do!\n" % pattern, file=log )
+
+            else:
+            rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
+            print( rightNow + " - Oh dear! Restarting %s\n" % pattern, file=log )
+
+            restartProcess( pattern )
 
 
 # Run the searches
@@ -62,30 +97,7 @@ def runSearches():
         print( "\n############### Search starting - %s ###############" % rightNow, file=log )
 
         for search, pattern in searches.iteritems():
-            rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-            print( "%s - Running %s...\n%s - Searching for \"%s\"..." % ( rightNow, search, rightNow, pattern ), file=log )
-
-            commOutput = commands.getstatusoutput( "pgrep -fl \"" + pattern + "\"" )
-
-            # Bummer... The pgrep is in the list of search results causing false positives.  Need to RE them out.
-            # I've tried ps and considered querying /proc using glob but they all require as much work as the grep.
-            # Most Python resources recommend avoiding RE where possible (hog) but given the size of the project
-            # and since I like using RE I'm going to proceed with that.
-
-            commOutputList = commOutput[1].split( '\n' )
-
-            for item in commOutputList:
-                if re.search( "^.+pgrep.+", item ):
-                    commOutputList.remove( item )
-
-            if commOutputList:
-                rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-                print( rightNow + " - %s is currently running.  Nothing to do!\n" % pattern, file=log )
-            else:
-                rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-                print( rightNow + " - Oh dear! Restarting %s\n" % pattern, file=log )
-
-                restartProcess( pattern )
+            runSearch( search, pattern )
 
     else:
         rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
@@ -93,11 +105,9 @@ def runSearches():
         sys.exit()
 
 
-# Function to restart a process from a failed search
-def restartProcess( search ):
-    pass
-
 # Run the script
 loadConfig()
 
 runSearches()
+
+# That's all folks!
