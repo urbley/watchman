@@ -21,5 +21,5 @@ That's all well and good but once I get on top of the search/restart parameters 
 to check for specific failed processes based on their stdout return.  Working with Sphinx I was quite lucky in that
 every failed attempt had a specific "FATAL" string in the stdout which I could base the pass/fail on.
 
-I'm not sure how to approach this from a generic point of view.  Maybe using pid files or similar would be a way
-to approach this.
+I'm not sure how to approach this from a generic point of view.  Maybe using pid files would be a way to approach
+this.
