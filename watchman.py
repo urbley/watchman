@@ -5,12 +5,15 @@ import os
 import re
 import commands
 import datetime
-
+import subprocess
+import shlex
+import smtplib
 
 # Global variables
 searches = {} # dictionary to store all searches found in the conf
 log = open( "/var/log/watchman_log", "a" ) # Lets try and open a log in /var/log to write to
 pwd = os.path.dirname( os.path.realpath( __file__ ) ) # I'm running from here
+reportEmail = "seardley@gcdtech.com" # This could go into the config file!
 
 
 # Check for a config file and load the contents
@@ -36,28 +39,48 @@ def loadConfig():
             print( rightNow + " - I tried to create a blank template for you but unfortunately I couldn't.  You're on your own muchacho." )
             print( rightNow + " - Error was: %s " % e, file=log )
 
-    for line in f:
-        # Skipping the rubbish
-        if re.search( "^\[", line ):
-            continue # Lets ignore section headers. the conf isn't complicated enough yet...
+        for line in f:
+            # Skipping the rubbish
+            if re.search( "^\[", line ):
+                continue # Lets ignore section headers. the conf isn't complicated enough yet...
 
-        if re.search( "^#", line ):
-            continue # Lets ignore comments of course
+            if re.search( "^#", line ):
+                continue # Lets ignore comments of course
 
-        if line == '\n':
-            continue # We don't care about blank lines do we?
+            if line == '\n':
+                continue # We don't care about blank lines do we?
 
-        # Reading in the useful info
-        matches = re.search( "^(Search\d+)=(.+)", line )
+            # Reading in the useful info
+            matches = re.search( "^(Search\d+)=(.+)", line )
 
-        if matches:
-            # We want the search name and the search string.
-            searches[matches.group(1)] = matches.group(2)
+            if matches:
+                # We want the search name and the search string.
+                searches[matches.group(1)] = matches.group(2)
 
 
 # Function to restart a process from a failed search
-def restartProcess( pattern ):
-    pass
+def restartProcess( search, pattern ):
+    x = 1
+    args = shlex.split( pattern )
+
+    while x < 4:
+        rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
+        print( rightNow + " - Trying to start %s: %s" % (search, pattern), file=log )
+
+        output = subprocess.Popen(args, stdout=subprocess.PIPE).communicate()[0]
+        print( rightNow + " - Attempt %d output: %s" % ( x, output ), file=log )
+
+        # After having trawled through the Sphinx documentation I can confirm that if Sphinx fails to start for ANY reason
+        # it will have "FATAL" in stdout.
+        if re.search( "^.+FATAL.", output ):
+            print( rightNow + " - Attempt %d failed.  Trying again" % x, file=log )
+        else:
+            print( rightNow + " - Success! %s restarted successfully\n" % search, file=log )
+            break
+
+        x += 1
+
+        # If we've tried 3 times without a successful restart send an email to alert whoever needs to know about this
 
 
 # I've broken out the individual searches into a reuseable function
@@ -83,9 +106,9 @@ def runSearch( search, pattern ):
         print( rightNow + " - %s is currently running.  Nothing to do!\n" % pattern, file=log )
     else:
         rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
-        print( rightNow + " - Oh dear! Restarting %s\n" % pattern, file=log )
+        print( rightNow + " - Oh dear! Restarting %s...\n" % pattern, file=log )
 
-        restartProcess( pattern )
+        restartProcess( search, pattern )
 
 
 # Run the searches
