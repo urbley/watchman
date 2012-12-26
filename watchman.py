@@ -24,7 +24,6 @@ domain = ""
 def loadConfig():
     try:
         f = open( pwd + "/watchman.conf", "r" )
-
     except IOError, e:
         rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
         print( rightNow + " - I could not find watchman.conf in the working directory (" + pwd + "). Error: %s" % e, file=log )
@@ -37,7 +36,6 @@ def loadConfig():
             print( rightNow + " - It's ok.  I created a blank for you but you'll need to configure it or there's nothing for me to do!", file=log )
 
             f = open( pwd + "/watchman.conf", "r" )
-
         except IOError, e:
             rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
             print( rightNow + " - I tried to create a blank template for you but unfortunately I couldn't.  You're on your own muchacho." )
@@ -56,7 +54,7 @@ def loadConfig():
 
         # Reading in the useful info from General section
         if re.search( "^server=.+", line ):
-            global server, f
+            global server
             server = re.search( "^server=(.+)", line ).group(1)
 
         if re.search( "^domain=.+", line ):
@@ -71,8 +69,8 @@ def loadConfig():
         matches = re.search( "^(Search\d+)=(.+)", line )
 
         if matches:
-            # We want the search name and the search string.
-            searches[matches.group(1)] = matches.group(2)
+                # We want the search name and the search string.
+                searches[matches.group(1)] = matches.group(2)
 
 
 # Function to restart a process from a failed search
@@ -113,7 +111,7 @@ def restartProcess( search, pattern ):
                            "<br />"+\
                            "<strong>" + search + "</strong> on server: <strong>" + server + "</strong> was not running when I checked and I could not restart it.  The search term was <strong>" + pattern + "</strong><br />" +\
                            "<br />"+\
-                           "You should probably look into this right away."
+                           "You should probably look into this right away.<br /><br />The output from the last attempt was:<br />------------------------<br /> " + output
 
             try:
                 errorEmail = smtplib.SMTP( 'localhost' )
