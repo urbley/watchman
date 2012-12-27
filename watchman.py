@@ -30,7 +30,7 @@ def loadConfig():
 
         try:
             f = open( pwd + "/watchman.conf", "w" )
-            print( "[General]\n#These 3 vars MUST be set correctly for the script to work\nserver=server1\nreportEmail=you@yourdomain.com\ndomain=yourdomain.com\n\n[Searches]\n#You can add multiple search patterns in the key=value formation e.g.\n#Search1=searchd\n#Search2=searche", file=f )
+            print( "[General]\n#These 3 vars MUST be set correctly for the script to work\n\n#server can get retrieved from hostname linux command\nserver=server1\n\n#this is the email where errors will be sent\nreportEmail=you@yourdomain.com\n\n#any domain that has send permissions in sendmail\ndomain=yourdomain.com\n\n[Searches]\n#You can add multiple search patterns in the key=value formation e.g.\n#Search1=searchd\n#Search2=searche", file=f )
 
             rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
             print( rightNow + " - It's ok.  I created a blank for you but you'll need to configure it or there's nothing for me to do!", file=log )
@@ -57,18 +57,18 @@ def loadConfig():
             global server
             server = re.search( "^server=(.+)", line ).group(1)
 
-        if re.search( "^domain=.+", line ):
-            global domain
-            domain = re.search( "^domain=(.+)", line ).group(1)
+            if re.search( "^domain=.+", line ):
+                global domain
+                domain = re.search( "^domain=(.+)", line ).group(1)
 
-        if re.search( "^reportEmail=.+", line ):
-            global reportEmail
-            reportEmail = re.search( "^reportEmail=(.+)", line ).group(1)
+            if re.search( "^reportEmail=.+", line ):
+                global reportEmail
+                reportEmail = re.search( "^reportEmail=(.+)", line ).group(1)
 
-        # Read in all defined searches
-        matches = re.search( "^(Search\d+)=(.+)", line )
+            # Read in all defined searches
+            matches = re.search( "^(Search\d+)=(.+)", line )
 
-        if matches:
+            if matches:
                 # We want the search name and the search string.
                 searches[matches.group(1)] = matches.group(2)
 
@@ -89,10 +89,13 @@ def restartProcess( search, pattern ):
         # it will have "FATAL" in stdout.
         if re.search( "^.+FATAL.", output, re.MULTILINE ):
             if x < 3:
+                rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
                 print( rightNow + " - Attempt %d failed.  Trying again" % x, file=log )
             else:
+                rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
                 print( rightNow + " - Attempt %d failed.  Emailing admin" % x, file=log )
         else:
+            rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
             print( rightNow + " - Success! %s restarted successfully\n" % search, file=log )
             break
 
@@ -117,6 +120,7 @@ def restartProcess( search, pattern ):
                 errorEmail = smtplib.SMTP( 'localhost' )
                 errorEmail.sendmail( fromEmail, reportEmail, errorMessage )
             except Exception, e :
+                rightNow = datetime.datetime.now().strftime( "%Y-%m-%d %H:%M:%S" )
                 print( rightNow + " - Could not send email with error: %s" % e, file=log )
 
 
