@@ -11,7 +11,7 @@ I am searching for a specific process of "searchd --config /sphinx/conf/test.con
 restart this process is also "searchd --config /sphinx/conf/test.conf".
 
 I've been thinking about ways to get around this to make the script more useful for other users and it seems the
-easiest way to do this is to add it onto the end of the search reference in the conf. Something like;
+easiest way to do this is to add the start command onto the end of the search reference in the conf something like;
 
 Search1=searchd --conf test.conf::searchd test.conf --start i.e. [searchName]=[searchPattern]::[restartCommand]
 
